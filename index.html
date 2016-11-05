@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+svg {
+  font: 10px sans-serif;
+}
+    
+.caption {
+  font-weight: bold;
+}
+    
+.key path {
+  display: none;
+}
+    
+.key line {
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.county-border {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .3;
+}
+
+</style>
+<body>
+    <input type="button" value="Click to get blue colors" id="onoff" onclick="onoff()">
+    <input type="button" value="Click to get tract lines of yellow/red map" id="onoff2" onclick="onoff2()">
+    <input type="button" value="Click to get tract lines of blue map" id="onoff3" onclick="onoff3()">
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+    
+var width = 960,
+    height = 1100;
+
+var formatNumber = d3.format(",d");
+    
+var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
+
+// A position encoding for the key only.
+var x = d3.scale.linear()
+    .domain([0, 5100])
+    .range([0, 480]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .tickSize(13)
+    .tickValues(color.domain())
+    .tickFormat(function(d) { return d >= 100 ? formatNumber(d) : null; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    //.attr("class", "county-border");
+
+var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+
+g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+    
+g.call(xAxis).append("text")
+    .attr("class", "caption")
+    .attr("y", -6)
+    .text("Population per square mile");
+
+    
+function onoff(){
+  currentvalue = document.getElementById('onoff').value;
+  if(currentvalue == "Click to get yellow/red colors"){
+    document.getElementById("onoff").value="Click to get blue colors";
+    myFunctionNew();
+  }else{
+    document.getElementById("onoff").value="Click to get yellow/red colors";
+    myFunction();
+  }
+}
+
+function onoff2(){
+  currentvalue = document.getElementById('onoff2').value;
+  if(currentvalue == "Click to turn off tract lines of yellow/red map"){
+    document.getElementById("onoff2").value="Click to get tract lines of yellow/red map";
+    myFunction3();
+  }else{
+    document.getElementById("onoff2").value="Click to turn off tract lines of yellow/red map";
+    myFunction2();
+  }
+}
+    
+function onoff3(){
+  currentvalue = document.getElementById('onoff3').value;
+  if(currentvalue == "Click to turn off tract lines of blue map"){
+    document.getElementById("onoff3").value="Click to get tract lines of blue map";
+    myFunction();
+  }else{
+    document.getElementById("onoff3").value="Click to turn off tract lines of blue map";
+    myFunction4();
+  }
+}
+//<input type="button" value="On" id="onoff" onclick="onoff()">
+    
+    
+//START OF FUNCTION4    *****************************************************************************************************************************
+ function myFunction4() {
+    console.log("cam here");
+     
+     
+    var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+     
+    var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#BBFFFF", "#97FFFF", "#00EEEE", "#00CDCD", "#5F9EA0", "#008B8B", "#009ACD", "#00688B", "#2F4F4F"]);
+     
+     var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+     
+     g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+     
+     d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+
+  var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);  
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); })
+      .attr("class", "county-border");
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+      
+});   
+}//END OF THE FUNCTION4  **************************************************************************************************************************
+    
+    
+//START OF FUNCTION    *****************************************************************************************************************************
+ function myFunction() {
+     
+      var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+
+    console.log("cam2 here");
+    var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#BBFFFF", "#97FFFF", "#00EEEE", "#00CDCD", "#5F9EA0", "#008B8B", "#009ACD", "#00688B", "#2F4F4F"]);
+     
+     var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+     
+     g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+     
+     d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+
+  var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);  
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+      
+});   
+}//END OF THE FUNCTION  **************************************************************************************************************************
+
+//START OF FUNCTIONNEW    *****************************************************************************************************************************
+ function myFunctionNew() {
+     
+      var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+
+    console.log("cam2 here");
+    var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
+     
+     var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+     
+     g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+     
+     d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+
+  var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);  
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+      
+});   
+}//END OF THE FUNCTIONNEW  **************************************************************************************************************************
+
+    
+    
+//START OF FUNCTION2  ******************************************************************************************************************************
+ function myFunction2() {
+     var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+     
+     console.log("cam here");
+    var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
+     
+     var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+     
+     g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+     
+    d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+
+  var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);   
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+        //.style("border", "1px solid black")
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); })
+      //.style("border", "1px solid black");
+      .attr("class", "county-border");  //HERE IT IS
+      //.attr("d", path);
+    //ADD STYLE OUTLINE HERE?
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+});
+ } //END OF FUNCTION2 ****************************************************************************************************************************
+
+//START OF FUNCTION3  ******************************************************************************************************************************
+ function myFunction3() {
+      var projection = d3.geo.albers()
+    .center([0, 500])
+    .rotate([100.0, -6.1])
+    .parallels([50, 60])
+    .scale(9000)
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+     
+    console.log("cam here");
+    var color = d3.scale.threshold()
+    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
+    .range(["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
+     
+     var g = svg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(440,40)");
+     
+     g.selectAll("rect")
+    .data(color.range().map(function(d, i) {
+      return {
+        x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+        x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+        z: d
+      };
+    }))
+  .enter().append("rect")
+    .attr("height", 8)
+    .attr("x", function(d) { return d.x0; })
+    .attr("width", function(d) { return d.x1 - d.x0; })
+    .style("fill", function(d) { return d.z; });
+     
+    d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+
+  var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);  
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+        //.style("border", "1px solid black")
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
+      //.style("border", "1px solid black");
+      //.attr("class", "county-border");  //HERE IT IS
+      //.attr("d", path);
+    //ADD STYLE OUTLINE HERE?
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+});
+ } //END OF FUNCTION3 ****************************************************************************************************************************
+
+    
+    
+    
+d3.json("nd.json", function(error, ca) {
+  if (error) throw error;
+  console.log(ca);
+
+  //var tracts = topojson.feature(ca, ca.objects.tracts);  
+   var tracts = topojson.feature(ca, ca.objects.tl_2012_38_tract);  
+    
+  // Clip tracts to land.
+  svg.append("defs").append("clipPath")
+      .attr("id", "clip-land")
+    .append("path")
+      .datum(topojson.feature(ca, ca.objects.counties))
+      .attr("d", path);
+
+  // Group tracts by color for faster rendering.
+  svg.append("g")
+      .attr("class", "tract")
+      .attr("clip-path", "url(#clip-land)")
+    .selectAll("path")
+      .data(d3.nest()
+        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+        //.style("border", "1px solid black")
+    .enter().append("path")
+      .style("fill", function(d) { return d.key; })
+      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
+      //.style("border", "1px solid black");
+      //.attr("class", "county-border");  //HERE IT IS
+      //.attr("d", path);
+    //ADD STYLE OUTLINE HERE?
+
+  // Draw county borders.
+  svg.append("path")
+      .datum(topojson.mesh(ca, ca.objects.counties, function(a, b) { return a !== b; }))
+      .attr("class", "county-border")
+      .attr("d", path);
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+</script>
